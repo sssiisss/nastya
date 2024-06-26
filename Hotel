@@ -1,0 +1,119 @@
+CREATE TABLE Hotel (
+    hotel_id INT AUTO_INCREMENT PRIMARY KEY,
+    hotel_name VARCHAR(100) NOT NULL,
+    address TEXT,
+    star_rating DECIMAL(2, 1)
+);
+
+CREATE TABLE RoomType (
+    room_type_id INT AUTO_INCREMENT PRIMARY KEY,
+    type_name VARCHAR(50) NOT NULL,
+    description TEXT
+);
+
+CREATE TABLE Room (
+    room_id INT AUTO_INCREMENT PRIMARY KEY,
+    room_number VARCHAR(10) NOT NULL,
+    hotel_id INT,
+    room_type_id INT,
+    price DECIMAL(10, 2) NOT NULL,
+    is_available BOOLEAN DEFAULT TRUE,
+    FOREIGN KEY (hotel_id) REFERENCES Hotel(hotel_id),
+    FOREIGN KEY (room_type_id) REFERENCES RoomType(room_type_id)
+);
+
+CREATE TABLE Guest (
+    guest_id INT AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(50) NOT NULL,
+    middle_name VARCHAR(50),
+    last_name VARCHAR(50) NOT NULL,
+    email VARCHAR(100) UNIQUE,
+    phone VARCHAR(20)
+);
+
+CREATE TABLE Reservation (
+    reservation_id INT AUTO_INCREMENT PRIMARY KEY,
+    guest_id INT,
+    room_id INT,
+    check_in_date DATE,
+    check_out_date DATE,
+    total_amount DECIMAL(10, 2) NOT NULL,
+    FOREIGN KEY (guest_id) REFERENCES Guest(guest_id),
+    FOREIGN KEY (room_id) REFERENCES Room(room_id)
+);
+
+-- Примеры данных
+
+-- Отели
+INSERT INTO Hotel (hotel_name, address, star_rating) VALUES 
+('Grand Hotel', '123 Main Street, City, Country', 4.5),
+('Luxury Resort', '456 Park Avenue, City, Country', 5.0),
+('Cozy Inn', '789 Lakeview Drive, City, Country', 3.5);
+
+-- Типы номеров
+INSERT INTO RoomType (type_name, description) VALUES 
+('Standard', 'Basic room with essential amenities'),
+('Deluxe', 'Room with additional comfort and amenities'),
+('Suite', 'Luxurious room with separate living areas and amenities');
+
+-- Номера
+INSERT INTO Room (room_number, hotel_id, room_type_id, price, is_available) VALUES 
+('101', 1, 1, 100.00, TRUE),
+('102', 1, 1, 100.00, TRUE),
+('201', 2, 2, 200.00, TRUE),
+('202', 2, 2, 200.00, TRUE),
+('301', 3, 3, 300.00, TRUE),
+('302', 3, 3, 300.00, TRUE);
+
+-- Гости
+INSERT INTO Guest (first_name, middle_name, last_name, email, phone) VALUES 
+('John', 'Michael', 'Doe', 'john.doe@example.com', '123-456-7890'),
+('Jane', 'Elizabeth', 'Smith', 'jane.smith@example.com', '987-654-3210');
+
+-- Бронирования
+INSERT INTO Reservation (guest_id, room_id, check_in_date, check_out_date, total_amount) VALUES 
+(1, 1, '2024-07-01', '2024-07-05', 400.00),
+(2, 3, '2024-08-15', '2024-08-20', 1000.00);
+
+-- Отчет 1: Общая сумма бронирований по каждому отелю
+SELECT 
+    h.hotel_name AS 'Отель',
+    SUM(r.total_amount) AS 'Общая сумма бронирований (руб)'
+FROM 
+    Reservation r
+JOIN 
+    Room rm ON r.room_id = rm.room_id
+JOIN 
+    Hotel h ON rm.hotel_id = h.hotel_id
+GROUP BY 
+    h.hotel_name;
+
+-- Отчет 2: Количество бронирований по каждому типу номеров
+SELECT 
+    rt.type_name AS 'Тип номера',
+    COUNT(r.reservation_id) AS 'Количество бронирований'
+FROM 
+    Reservation r
+JOIN 
+    Room rm ON r.room_id = rm.room_id
+JOIN 
+    RoomType rt ON rm.room_type_id = rt.room_type_id
+GROUP BY 
+    rt.type_name;
+
+-- Отчет 3: Количество бронирований по каждому гостю
+SELECT 
+    CONCAT(g.first_name, ' ', g.last_name) AS 'Гость',
+    COUNT(r.reservation_id) AS 'Количество бронирований'
+FROM 
+    Reservation r
+JOIN 
+    Guest g ON r.guest_id = g.guest_id
+GROUP BY 
+    g.guest_id;
+
+-- Удаление записи о бронировании по id
+DELETE FROM Reservation WHERE reservation_id = 1;
+
+-- Обновление цены номера по id
+UPDATE Room SET price = 150.00 WHERE room_id = 1;
